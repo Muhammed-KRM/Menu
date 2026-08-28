@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Product } from '../../../../core/models/menu.model';
+import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ImageUrlPipe],
   template: `
     <div class="bg-white rounded-2xl border border-[#E3D7C1] overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group hover:border-[#C65D3A]/40">
       
@@ -15,7 +16,7 @@ import { Product } from '../../../../core/models/menu.model';
         class="relative w-full aspect-[4/3] bg-[#EFE7D5] overflow-hidden cursor-pointer">
         @if (product.imageUrl) {
           <img 
-            [src]="product.imageUrl" 
+            [src]="product.imageUrl | imageUrl" 
             [alt]="product.name" 
             loading="lazy"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />

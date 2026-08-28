@@ -1,11 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MenuService } from '../../../../core/services/menu.service';
+import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-category-nav',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ImageUrlPipe],
   template: `
     <nav class="sticky top-0 z-30 bg-[#F7F1E3]/95 backdrop-blur-md border-b border-[#E3D7C1] py-3 px-4 shadow-sm transition-all">
       <div class="max-w-6xl mx-auto flex items-center gap-2.5 overflow-x-auto no-scrollbar scroll-smooth">
@@ -22,7 +23,7 @@ import { MenuService } from '../../../../core/services/menu.service';
             class="flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-xs sm:text-sm whitespace-nowrap border transition-all duration-200 hover:border-[#3A2418] active:scale-95 cursor-pointer">
             
             @if (cat.imageUrl) {
-              <img [src]="cat.imageUrl" alt="" class="w-5 h-5 rounded-full object-cover border border-white/20" />
+              <img [src]="cat.imageUrl | imageUrl" alt="" class="w-5 h-5 rounded-full object-cover border border-white/20" />
             }
             <span>{{ cat.name }}</span>
             <span 

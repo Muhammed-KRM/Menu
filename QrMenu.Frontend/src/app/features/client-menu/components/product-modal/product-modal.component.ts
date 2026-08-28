@@ -1,11 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MenuService } from '../../../../core/services/menu.service';
+import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-product-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ImageUrlPipe],
   template: `
     @if (menuService.selectedProductForModal(); as product) {
       <div 
@@ -28,7 +29,7 @@ import { MenuService } from '../../../../core/services/menu.service';
           <!-- Büyük Ürün Görseli -->
           <div class="w-full h-64 sm:h-72 bg-[#EFE7D5] relative flex-shrink-0">
             @if (product.imageUrl) {
-              <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-cover" />
+              <img [src]="product.imageUrl | imageUrl" [alt]="product.name" class="w-full h-full object-cover" />
             } @else {
               <div class="w-full h-full flex items-center justify-center text-[#725B4D]">
                 <svg class="w-16 h-16 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">

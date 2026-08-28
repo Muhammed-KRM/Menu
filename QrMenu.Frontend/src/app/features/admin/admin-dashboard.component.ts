@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { CategoryManagerComponent } from './components/category-manager/category-manager.component';
 import { ProductManagerComponent } from './components/product-manager/product-manager.component';
 import { AuditLogsComponent } from './components/audit-logs/audit-logs.component';
+import { QrGeneratorComponent } from './components/qr-generator/qr-generator.component';
 
-type AdminTab = 'categories' | 'products' | 'audit-logs';
+type AdminTab = 'categories' | 'products' | 'audit-logs' | 'qr-generator';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -13,7 +14,8 @@ type AdminTab = 'categories' | 'products' | 'audit-logs';
     CommonModule,
     CategoryManagerComponent,
     ProductManagerComponent,
-    AuditLogsComponent
+    AuditLogsComponent,
+    QrGeneratorComponent
   ],
   template: `
     <div class="min-h-screen bg-[#F7F1E3] flex flex-col text-[#3A2418]">
@@ -62,6 +64,16 @@ type AdminTab = 'categories' | 'products' | 'audit-logs';
           </button>
 
           <button 
+            (click)="activeTab.set('qr-generator')"
+            [class.bg-[#3A2418]]="activeTab() === 'qr-generator'"
+            [class.text-[#F7F1E3]]="activeTab() === 'qr-generator'"
+            [class.bg-[#F7F1E3]]="activeTab() !== 'qr-generator'"
+            [class.text-[#3A2418]]="activeTab() !== 'qr-generator'"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2">
+            <span>📱 Masa QR Üretici</span>
+          </button>
+
+          <button 
             (click)="activeTab.set('audit-logs')"
             [class.bg-[#3A2418]]="activeTab() === 'audit-logs'"
             [class.text-[#F7F1E3]]="activeTab() === 'audit-logs'"
@@ -81,6 +93,9 @@ type AdminTab = 'categories' | 'products' | 'audit-logs';
           }
           @case ('products') {
             <app-product-manager />
+          }
+          @case ('qr-generator') {
+            <app-qr-generator />
           }
           @case ('audit-logs') {
             <app-audit-logs />

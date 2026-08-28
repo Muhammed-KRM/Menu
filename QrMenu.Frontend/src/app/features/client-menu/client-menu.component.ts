@@ -6,6 +6,7 @@ import { HeroHeaderComponent } from './components/hero-header/hero-header.compon
 import { CategoryNavComponent } from './components/category-nav/category-nav.component';
 import { ProductCardComponent } from './components/product-card/product-card.component';
 import { ProductModalComponent } from './components/product-modal/product-modal.component';
+import { ImageUrlPipe } from '../../shared/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-client-menu',
@@ -15,7 +16,8 @@ import { ProductModalComponent } from './components/product-modal/product-modal.
     HeroHeaderComponent,
     CategoryNavComponent,
     ProductCardComponent,
-    ProductModalComponent
+    ProductModalComponent,
+    ImageUrlPipe
   ],
   template: `
     <div class="min-h-screen bg-[#F7F1E3] flex flex-col selection:bg-[#C65D3A] selection:text-white">
@@ -66,7 +68,7 @@ import { ProductModalComponent } from './components/product-modal/product-modal.
               <!-- Kategori Başlığı -->
               <div class="flex items-center gap-3 mb-6 pb-3 border-b border-[#E3D7C1]">
                 @if (category.imageUrl) {
-                  <img [src]="category.imageUrl" alt="" class="w-8 h-8 rounded-full object-cover shadow-sm border border-white" />
+                  <img [src]="category.imageUrl | imageUrl" alt="" class="w-8 h-8 rounded-full object-cover shadow-sm border border-white" />
                 }
                 <h2 class="text-2xl sm:text-3xl font-extrabold text-[#3A2418] tracking-tight">
                   {{ category.name }}
