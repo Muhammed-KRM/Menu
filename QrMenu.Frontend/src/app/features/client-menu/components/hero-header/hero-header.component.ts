@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { MenuService } from '../../../../core/services/menu.service';
 
 @Component({
@@ -14,10 +15,18 @@ import { MenuService } from '../../../../core/services/menu.service';
       <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-[#C65D3A]/15 rounded-full blur-3xl pointer-events-none"></div>
 
       <div class="max-w-4xl mx-auto relative z-10 text-center">
-        <!-- Restoran Rozeti -->
-        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs font-semibold tracking-wider uppercase text-[#EFE7D5] mb-3">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Açık & Serviste</span>
+        <!-- Üst Rozetler: Servis Durumu ve URL'den Okunan Masa Rozeti -->
+        <div class="flex items-center justify-center gap-2.5 mb-3 flex-wrap">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs font-semibold tracking-wider uppercase text-[#EFE7D5]">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Açık & Serviste</span>
+          </div>
+
+          <!-- Masa / Genel Menü Rozeti (Yalnızca URL'den Anlık Okunur) -->
+          <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#C65D3A]/25 backdrop-blur-md border border-[#C65D3A]/40 text-xs font-bold text-[#F7F1E3] shadow-sm">
+            <span>📍</span>
+            <span>{{ tableName() }}</span>
+          </div>
         </div>
 
         <!-- Restoran Adı -->
@@ -57,9 +66,20 @@ import { MenuService } from '../../../../core/services/menu.service';
     </header>
   `
 })
-export class HeroHeaderComponent {
+export class HeroHeaderComponent implements OnInit {
   menuService = inject(MenuService);
+  private route = inject(ActivatedRoute);
+
   searchQuery = '';
+  tableName = signal<string>('Genel Menü');
+
+  ngOnInit(): void {
+    // Sadece anlık URL query parametresinden (?table=...) okur, hiçbir kalıcı hafızaya yazmaz.
+    this.route.queryParams.subscribe(params => {
+      const table = params['table']?.trim();
+      this.tableName.set(table && table.length > 0 ? table : 'Genel Menü');
+    });
+  }
 
   onSearchChange(value: string): void {
     this.menuService.searchQuery.set(value);
