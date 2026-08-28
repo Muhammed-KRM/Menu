@@ -13,6 +13,10 @@ builder.Services.AddControllers()
     {
         // Türkçe karakterlerin düzgün JSON çıktısı için
         options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+        // Angular (camelCase) ile uyum: Id -> id, Name -> name, ImageUrl -> imageUrl
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // Entity döngüsel referanslarını yoksay
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 
 // Swagger / OpenAPI

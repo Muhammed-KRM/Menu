@@ -1,12 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { Product } from '../../../../core/models/menu.model';
 import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [CommonModule, ImageUrlPipe],
+  imports: [CommonModule, ImageUrlPipe, DecimalPipe],
   template: `
     <div class="bg-white rounded-2xl border border-[#E3D7C1] overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group hover:border-[#C65D3A]/40">
       
@@ -18,7 +18,8 @@ import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
           <img 
             [src]="product.imageUrl | imageUrl" 
             [alt]="product.name" 
-            loading="lazy"
+            loading="eager"
+            (error)="onImgError($event)"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         } @else {
           <div class="w-full h-full flex items-center justify-center text-[#725B4D]">
@@ -54,7 +55,7 @@ import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
           <div class="flex flex-col">
             <span class="text-[10px] uppercase font-bold text-[#725B4D] tracking-wider">Fiyat</span>
             <span class="text-lg md:text-xl font-extrabold text-[#C65D3A]">
-              {{ product.price | currency:'TRY':'symbol-narrow':'1.0-2':'tr' }}
+              {{ product.price | number:'1.0-2' }} ₺
             </span>
           </div>
 
@@ -75,4 +76,9 @@ import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
 export class ProductCardComponent {
   @Input({ required: true }) product!: Product;
   @Output() detailClick = new EventEmitter<Product>();
+
+  onImgError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+  }
 }

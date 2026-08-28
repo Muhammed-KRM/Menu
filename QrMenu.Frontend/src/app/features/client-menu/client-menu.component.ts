@@ -80,7 +80,7 @@ import { ImageUrlPipe } from '../../shared/pipes/image-url.pipe';
 
               <!-- Ürünler Grid (Mobilde 1 veya 2, Tablette 3, Masaüstünde 4 kolon) -->
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                @for (product of category.products; track product.id) {
+                @for (product of category.products || []; track product.id) {
                   <app-product-card 
                     [product]="product"
                     (detailClick)="onProductDetail($event)" />

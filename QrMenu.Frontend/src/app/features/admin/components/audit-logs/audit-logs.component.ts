@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
-import { AuditLog } from '../../../../core/models/admin.model';
+import { AuditLog, PaginatedAuditLogResponse } from '../../../../core/models/admin.model';
 
 @Component({
   selector: 'app-audit-logs',
@@ -190,7 +190,7 @@ export class AuditLogsComponent implements OnInit {
       this.selectedEntityName || undefined,
       this.searchTerm || undefined
     ).subscribe({
-      next: (res) => {
+      next: (res: PaginatedAuditLogResponse) => {
         this.logs.set(res.data);
         this.totalCount.set(res.totalCount);
         this.totalPages.set(res.totalPages);

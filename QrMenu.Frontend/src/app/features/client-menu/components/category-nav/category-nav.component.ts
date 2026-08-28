@@ -32,7 +32,7 @@ import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
               [class.bg-[#C65D3A]/10]="menuService.activeCategoryId() !== cat.id"
               [class.text-[#C65D3A]]="menuService.activeCategoryId() !== cat.id"
               class="text-[11px] font-bold px-1.5 py-0.5 rounded-full">
-              {{ cat.products.length }}
+              {{ cat.products ? cat.products.length : 0 }}
             </span>
           </button>
         }

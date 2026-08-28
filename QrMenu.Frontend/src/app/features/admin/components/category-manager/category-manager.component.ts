@@ -2,12 +2,14 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
+import { FeedbackModalService } from '../../../../core/services/feedback-modal.service';
 import { AdminCategory, AdminCategoryDto } from '../../../../core/models/admin.model';
+import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-category-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ImageUrlPipe],
   template: `
     <div class="space-y-6">
       <!-- Başlık ve Yeni Ekle Butonu -->
@@ -50,7 +52,7 @@ import { AdminCategory, AdminCategoryDto } from '../../../../core/models/admin.m
                   <tr class="hover:bg-[#F7F1E3]/40 transition-colors">
                     <td class="p-4">
                       @if (cat.imageUrl) {
-                        <img [src]="cat.imageUrl" alt="" class="w-10 h-10 rounded-xl object-cover border border-[#E3D7C1]" />
+                        <img [src]="cat.imageUrl | imageUrl" alt="" class="w-10 h-10 rounded-xl object-cover border border-[#E3D7C1]" />
                       } @else {
                         <div class="w-10 h-10 rounded-xl bg-[#EFE7D5] flex items-center justify-center text-[#725B4D] text-xs font-bold">
                           📁
@@ -158,14 +160,20 @@ import { AdminCategory, AdminCategoryDto } from '../../../../core/models/admin.m
             <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-[#EFE7D5]">
               <button 
                 (click)="closeModal()"
-                class="px-4 py-2.5 text-xs font-bold text-[#725B4D] hover:bg-[#F7F1E3] rounded-xl transition-colors cursor-pointer">
+                [disabled]="isSaving()"
+                class="px-4 py-2.5 text-xs font-bold text-[#725B4D] hover:bg-[#F7F1E3] rounded-xl transition-colors cursor-pointer disabled:opacity-50">
                 İptal
               </button>
               <button 
                 (click)="saveCategory()"
-                [disabled]="!formData.name"
-                class="px-5 py-2.5 bg-[#C65D3A] hover:bg-[#AA4B2B] disabled:opacity-50 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer">
-                Kaydet
+                [disabled]="!formData.name || isSaving()"
+                class="px-5 py-2.5 bg-[#C65D3A] hover:bg-[#AA4B2B] disabled:opacity-50 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center gap-2">
+                @if (isSaving()) {
+                  <span class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  <span>Kaydediliyor...</span>
+                } @else {
+                  <span>Kaydet</span>
+                }
               </button>
             </div>
           </div>
@@ -176,9 +184,11 @@ import { AdminCategory, AdminCategoryDto } from '../../../../core/models/admin.m
 })
 export class CategoryManagerComponent implements OnInit {
   private adminService = inject(AdminService);
+  private feedbackService = inject(FeedbackModalService);
 
   categories = signal<AdminCategory[]>([]);
   isLoading = signal<boolean>(false);
+  isSaving = signal<boolean>(false);
   showModal = signal<boolean>(false);
   isUploading = signal<boolean>(false);
   editingCategory = signal<AdminCategory | null>(null);
@@ -197,7 +207,7 @@ export class CategoryManagerComponent implements OnInit {
   loadCategories(): void {
     this.isLoading.set(true);
     this.adminService.getCategories().subscribe({
-      next: (data) => {
+      next: (data: AdminCategory[]) => {
         this.categories.set(data);
         this.isLoading.set(false);
       },
@@ -230,18 +240,19 @@ export class CategoryManagerComponent implements OnInit {
     this.showModal.set(false);
   }
 
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
 
     this.isUploading.set(true);
     this.adminService.uploadImage(file).subscribe({
-      next: (res) => {
+      next: (res: { fileName: string; imageUrl: string; size: number }) => {
         this.formData.imageUrl = `https://localhost:7000${res.imageUrl}`;
         this.isUploading.set(false);
       },
       error: () => {
-        alert('Görsel yüklenirken bir hata oluştu.');
+        this.feedbackService.showError('Görsel yüklenirken bir hata oluştu.', 'Yükleme Hatası');
         this.isUploading.set(false);
       }
     });
@@ -250,19 +261,34 @@ export class CategoryManagerComponent implements OnInit {
   saveCategory(): void {
     if (!this.formData.name) return;
 
+    this.isSaving.set(true);
     const editing = this.editingCategory();
     if (editing) {
       this.adminService.updateCategory(editing.id, this.formData).subscribe({
         next: () => {
+          this.isSaving.set(false);
           this.closeModal();
           this.loadCategories();
+          this.feedbackService.showSuccess(`"${this.formData.name}" kategorisi başarıyla güncellendi.`, 'İşlem Başarılı');
+        },
+        error: (err: unknown) => {
+          this.isSaving.set(false);
+          console.error('Kategori güncellenirken hata:', err);
+          this.feedbackService.showError('Kategori güncellenirken bir hata oluştu.', 'Güncelleme Başarısız');
         }
       });
     } else {
       this.adminService.createCategory(this.formData).subscribe({
         next: () => {
+          this.isSaving.set(false);
           this.closeModal();
           this.loadCategories();
+          this.feedbackService.showSuccess(`"${this.formData.name}" kategorisi menüye eklendi.`, 'Kategori Eklendi');
+        },
+        error: (err: unknown) => {
+          this.isSaving.set(false);
+          console.error('Kategori eklenirken hata:', err);
+          this.feedbackService.showError('Kategori eklenirken bir hata oluştu.', 'Kayıt Başarısız');
         }
       });
     }
@@ -271,7 +297,13 @@ export class CategoryManagerComponent implements OnInit {
   deleteCategory(cat: AdminCategory): void {
     if (confirm(`"${cat.name}" kategorisini silmek istediğinize emin misiniz?`)) {
       this.adminService.deleteCategory(cat.id).subscribe({
-        next: () => this.loadCategories()
+        next: () => {
+          this.loadCategories();
+          this.feedbackService.showSuccess(`"${cat.name}" kategorisi silindi.`, 'Kategori Silindi');
+        },
+        error: () => {
+          this.feedbackService.showError('Kategori silinirken bir hata oluştu.', 'Silme Başarısız');
+        }
       });
     }
   }

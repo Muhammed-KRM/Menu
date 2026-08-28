@@ -1,12 +1,12 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { MenuService } from '../../../../core/services/menu.service';
 import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-product-modal',
   standalone: true,
-  imports: [CommonModule, ImageUrlPipe],
+  imports: [CommonModule, ImageUrlPipe, DecimalPipe],
   template: `
     @if (menuService.selectedProductForModal(); as product) {
       <div 
@@ -45,7 +45,7 @@ import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
               <div class="flex items-start justify-between gap-4 mb-3">
                 <h2 class="text-2xl font-extrabold text-[#3A2418] tracking-tight">{{ product.name }}</h2>
                 <span class="text-2xl font-black text-[#C65D3A] whitespace-nowrap">
-                  {{ product.price | currency:'TRY':'symbol-narrow':'1.0-2':'tr' }}
+                  {{ product.price | number:'1.0-2' }} ₺
                 </span>
               </div>
 

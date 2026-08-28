@@ -88,17 +88,23 @@ public class AppDbContext : DbContext
 
         foreach (var entry in ChangeTracker.Entries())
         {
-            // AuditLog kayıtlarını ve değişmemiş varlıkları atla
+            // AuditLog ve ara tablo (ProductCategory) kayıtlarını atla, sadece ana varlıkları (Product, Category) logla
             if (entry.Entity is AuditLog
+                || entry.Entity is ProductCategory
                 || entry.State == EntityState.Detached
                 || entry.State == EntityState.Unchanged)
             {
                 continue;
             }
 
+            string? entityTitle = null;
+            if (entry.Entity is Product p) entityTitle = p.Name;
+            else if (entry.Entity is Category c) entityTitle = c.Name;
+
             var auditEntry = new AuditEntry(entry)
             {
                 EntityName = entry.Entity.GetType().Name,
+                EntityTitle = entityTitle,
                 IpAddress = ipAddress,
                 Endpoint = endpoint,
                 UserId = userId
@@ -170,6 +176,7 @@ public class AuditEntry
     public EntityEntry Entry { get; }
     public string UserId { get; set; } = "Admin";
     public string EntityName { get; set; } = "";
+    public string? EntityTitle { get; set; }
     public string ActionType { get; set; } = "";
     public string? IpAddress { get; set; }
     public string? Endpoint { get; set; }
@@ -193,14 +200,21 @@ public class AuditEntry
             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
+        var entityId = KeyValues.TryGetValue("Id", out var idVal)
+            ? idVal?.ToString()
+            : (KeyValues.Count > 0 ? JsonSerializer.Serialize(KeyValues, jsonOptions) : null);
+
+        var description = !string.IsNullOrWhiteSpace(EntityTitle)
+            ? $"\"{EntityTitle}\" ({EntityName}) üzerinde {ActionType} işlemi yapıldı."
+            : $"{EntityName} üzerinde {ActionType} işlemi yapıldı.";
+
         return new AuditLog
         {
             UserId = UserId,
             ActionType = ActionType,
             EntityName = EntityName,
-            EntityId = KeyValues.Count > 0
-                ? JsonSerializer.Serialize(KeyValues, jsonOptions)
-                : null,
+            EntityId = entityId,
+            EntityTitle = EntityTitle,
             OldValuesJson = OldValues.Count == 0
                 ? null
                 : JsonSerializer.Serialize(OldValues, jsonOptions),
@@ -210,7 +224,7 @@ public class AuditEntry
             IpAddress = IpAddress,
             Endpoint = Endpoint,
             Timestamp = DateTime.UtcNow,
-            Description = $"{EntityName} üzerinde {ActionType} işlemi yapıldı."
+            Description = description
         };
     }
 }

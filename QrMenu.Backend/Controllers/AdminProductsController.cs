@@ -145,7 +145,20 @@ public class AdminProductsController : ControllerBase
 
         _logger.LogInformation("Yeni ürün eklendi: {ProductName} (Id: {ProductId})", product.Name, product.Id);
 
-        return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
+        var result = new
+        {
+            product.Id,
+            product.Name,
+            product.Description,
+            product.Price,
+            product.ImageUrl,
+            product.Calories,
+            product.PreparationTime,
+            product.IsAvailable,
+            CategoryIds = product.ProductCategories.Select(pc => pc.CategoryId).ToList()
+        };
+
+        return CreatedAtAction(nameof(GetById), new { id = product.Id }, result);
     }
 
     /// <summary>
@@ -175,18 +188,26 @@ public class AdminProductsController : ControllerBase
         product.PreparationTime = dto.PreparationTime?.Trim();
         product.IsAvailable = dto.IsAvailable;
 
-        // Mevcut kategori ilişkilerini temizleyip yenilerini ekle
-        product.ProductCategories.Clear();
-        if (dto.CategoryIds != null && dto.CategoryIds.Count > 0)
+        // Akıllı kategori senkronizasyonu: Sadece gerçekten değişen ilişkileri güncelle
+        var existingCategoryIds = product.ProductCategories.Select(pc => pc.CategoryId).ToHashSet();
+        var newCategoryIds = (dto.CategoryIds ?? new List<Guid>()).Distinct().ToHashSet();
+
+        // Kaldırılan kategorileri çıkar
+        var toRemove = product.ProductCategories.Where(pc => !newCategoryIds.Contains(pc.CategoryId)).ToList();
+        foreach (var pc in toRemove)
         {
-            foreach (var categoryId in dto.CategoryIds.Distinct())
+            product.ProductCategories.Remove(pc);
+        }
+
+        // Yeni eklenen kategorileri ekle
+        var toAdd = newCategoryIds.Where(catId => !existingCategoryIds.Contains(catId)).ToList();
+        foreach (var catId in toAdd)
+        {
+            product.ProductCategories.Add(new ProductCategory
             {
-                product.ProductCategories.Add(new ProductCategory
-                {
-                    CategoryId = categoryId,
-                    ProductId = product.Id
-                });
-            }
+                CategoryId = catId,
+                ProductId = product.Id
+            });
         }
 
         await _context.SaveChangesAsync();
@@ -194,7 +215,20 @@ public class AdminProductsController : ControllerBase
 
         _logger.LogInformation("Ürün güncellendi: {ProductName} (Id: {ProductId})", product.Name, product.Id);
 
-        return Ok(product);
+        var result = new
+        {
+            product.Id,
+            product.Name,
+            product.Description,
+            product.Price,
+            product.ImageUrl,
+            product.Calories,
+            product.PreparationTime,
+            product.IsAvailable,
+            CategoryIds = product.ProductCategories.Select(pc => pc.CategoryId).ToList()
+        };
+
+        return Ok(result);
     }
 
     /// <summary>

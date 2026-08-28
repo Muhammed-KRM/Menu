@@ -1,13 +1,15 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../core/services/admin.service';
-import { AdminCategory, AdminProduct, AdminProductDto } from '../../../../core/models/admin.model';
+import { FeedbackModalService } from '../../../../core/services/feedback-modal.service';
+import { AdminCategory, AdminProduct, AdminProductDetail, AdminProductDto } from '../../../../core/models/admin.model';
+import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-product-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DecimalPipe, ImageUrlPipe],
   template: `
     <div class="space-y-6">
       <!-- Başlık ve Yeni Ürün Ekle -->
@@ -50,7 +52,7 @@ import { AdminCategory, AdminProduct, AdminProductDto } from '../../../../core/m
                   <tr class="hover:bg-[#F7F1E3]/40 transition-colors">
                     <td class="p-4">
                       @if (prod.imageUrl) {
-                        <img [src]="prod.imageUrl" alt="" class="w-12 h-12 rounded-2xl object-cover border border-[#E3D7C1]" />
+                        <img [src]="prod.imageUrl | imageUrl" alt="" class="w-12 h-12 rounded-2xl object-cover border border-[#E3D7C1]" (error)="onThumbError($event)" />
                       } @else {
                         <div class="w-12 h-12 rounded-2xl bg-[#EFE7D5] flex items-center justify-center text-[#725B4D] text-xs">
                           🍲
@@ -63,7 +65,7 @@ import { AdminCategory, AdminProduct, AdminProductDto } from '../../../../core/m
                     </td>
                     <td class="p-4">
                       <div class="flex flex-wrap gap-1">
-                        @for (cat of prod.categories; track cat.id) {
+                        @for (cat of prod.categories || []; track cat.id) {
                           <span class="px-2 py-0.5 rounded-full bg-[#3A2418]/10 text-[#3A2418] text-[11px] font-semibold">
                             {{ cat.name }}
                           </span>
@@ -71,7 +73,7 @@ import { AdminCategory, AdminProduct, AdminProductDto } from '../../../../core/m
                       </div>
                     </td>
                     <td class="p-4 font-black text-[#C65D3A] text-base">
-                      {{ prod.price | currency:'TRY':'symbol-narrow':'1.0-2':'tr' }}
+                      ₺{{ prod.price | number:'1.0-2' }}
                     </td>
                     <td class="p-4">
                       <button 
@@ -203,14 +205,20 @@ import { AdminCategory, AdminProduct, AdminProductDto } from '../../../../core/m
             <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-[#EFE7D5]">
               <button 
                 (click)="closeModal()"
-                class="px-4 py-2.5 text-xs font-bold text-[#725B4D] hover:bg-[#F7F1E3] rounded-xl transition-colors cursor-pointer">
+                [disabled]="isSaving()"
+                class="px-4 py-2.5 text-xs font-bold text-[#725B4D] hover:bg-[#F7F1E3] rounded-xl transition-colors cursor-pointer disabled:opacity-50">
                 İptal
               </button>
               <button 
                 (click)="saveProduct()"
-                [disabled]="!formData.name || formData.price <= 0 || formData.categoryIds.length === 0"
-                class="px-5 py-2.5 bg-[#C65D3A] hover:bg-[#AA4B2B] disabled:opacity-50 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer">
-                Kaydet
+                [disabled]="!formData.name || formData.price <= 0 || formData.categoryIds.length === 0 || isSaving()"
+                class="px-5 py-2.5 bg-[#C65D3A] hover:bg-[#AA4B2B] disabled:opacity-50 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center gap-2">
+                @if (isSaving()) {
+                  <span class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  <span>Kaydediliyor...</span>
+                } @else {
+                  <span>Kaydet</span>
+                }
               </button>
             </div>
           </div>
@@ -221,10 +229,12 @@ import { AdminCategory, AdminProduct, AdminProductDto } from '../../../../core/m
 })
 export class ProductManagerComponent implements OnInit {
   private adminService = inject(AdminService);
+  private feedbackService = inject(FeedbackModalService);
 
   products = signal<AdminProduct[]>([]);
   availableCategories = signal<AdminCategory[]>([]);
   isLoading = signal<boolean>(false);
+  isSaving = signal<boolean>(false);
   showModal = signal<boolean>(false);
   isUploading = signal<boolean>(false);
   editingProductId = signal<string | null>(null);
@@ -248,7 +258,7 @@ export class ProductManagerComponent implements OnInit {
   loadProducts(): void {
     this.isLoading.set(true);
     this.adminService.getProducts().subscribe({
-      next: (data) => {
+      next: (data: AdminProduct[]) => {
         this.products.set(data);
         this.isLoading.set(false);
       },
@@ -258,7 +268,7 @@ export class ProductManagerComponent implements OnInit {
 
   loadCategories(): void {
     this.adminService.getCategories().subscribe({
-      next: (data) => this.availableCategories.set(data)
+      next: (data: AdminCategory[]) => this.availableCategories.set(data)
     });
   }
 
@@ -266,7 +276,7 @@ export class ProductManagerComponent implements OnInit {
     if (product) {
       this.editingProductId.set(product.id);
       this.adminService.getProductById(product.id).subscribe({
-        next: (detail) => {
+        next: (detail: AdminProductDetail) => {
           this.formData = {
             name: detail.name,
             description: detail.description,
@@ -313,18 +323,19 @@ export class ProductManagerComponent implements OnInit {
     }
   }
 
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
 
     this.isUploading.set(true);
     this.adminService.uploadImage(file).subscribe({
-      next: (res) => {
+      next: (res: { fileName: string; imageUrl: string; size: number }) => {
         this.formData.imageUrl = `https://localhost:7000${res.imageUrl}`;
         this.isUploading.set(false);
       },
       error: () => {
-        alert('Görsel yüklenirken bir hata oluştu.');
+        this.feedbackService.showError('Görsel yüklenirken bir hata oluştu.', 'Yükleme Hatası');
         this.isUploading.set(false);
       }
     });
@@ -333,19 +344,34 @@ export class ProductManagerComponent implements OnInit {
   saveProduct(): void {
     if (!this.formData.name || this.formData.price <= 0 || this.formData.categoryIds.length === 0) return;
 
+    this.isSaving.set(true);
     const id = this.editingProductId();
     if (id) {
       this.adminService.updateProduct(id, this.formData).subscribe({
         next: () => {
+          this.isSaving.set(false);
           this.closeModal();
           this.loadProducts();
+          this.feedbackService.showSuccess(`"${this.formData.name}" ürünü başarıyla güncellendi.`, 'İşlem Başarılı');
+        },
+        error: (err: unknown) => {
+          this.isSaving.set(false);
+          console.error('Ürün güncellenirken hata:', err);
+          this.feedbackService.showError('Ürün güncellenirken bir hata oluştu. Lütfen tekrar deneyin.', 'Güncelleme Başarısız');
         }
       });
     } else {
       this.adminService.createProduct(this.formData).subscribe({
         next: () => {
+          this.isSaving.set(false);
           this.closeModal();
           this.loadProducts();
+          this.feedbackService.showSuccess(`"${this.formData.name}" ürünü menüye eklendi.`, 'Ürün Eklendi');
+        },
+        error: (err: unknown) => {
+          this.isSaving.set(false);
+          console.error('Ürün eklenirken hata:', err);
+          this.feedbackService.showError('Ürün eklenirken bir hata oluştu. Lütfen tekrar deneyin.', 'Kayıt Başarısız');
         }
       });
     }
@@ -353,8 +379,13 @@ export class ProductManagerComponent implements OnInit {
 
   toggleStock(prod: AdminProduct): void {
     this.adminService.toggleProductStock(prod.id).subscribe({
-      next: (res) => {
+      next: (res: { id: string; name: string; isAvailable: boolean }) => {
         prod.isAvailable = res.isAvailable;
+        const statusText = res.isAvailable ? 'stokta var olarak ayarlandı.' : 'tükendi olarak işaretlendi.';
+        this.feedbackService.showSuccess(`"${prod.name}" ${statusText}`, 'Stok Güncellendi');
+      },
+      error: () => {
+        this.feedbackService.showError('Stok durumu değiştirilirken hata oluştu.', 'İşlem Başarısız');
       }
     });
   }
@@ -362,8 +393,19 @@ export class ProductManagerComponent implements OnInit {
   deleteProduct(prod: AdminProduct): void {
     if (confirm(`"${prod.name}" ürününü silmek istediğinize emin misiniz?`)) {
       this.adminService.deleteProduct(prod.id).subscribe({
-        next: () => this.loadProducts()
+        next: () => {
+          this.loadProducts();
+          this.feedbackService.showSuccess(`"${prod.name}" ürünü başarıyla silindi.`, 'Ürün Silindi');
+        },
+        error: () => {
+          this.feedbackService.showError('Ürün silinirken bir hata oluştu.', 'Silme Başarısız');
+        }
       });
     }
+  }
+
+  onThumbError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 }

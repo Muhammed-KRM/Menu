@@ -98,7 +98,16 @@ public class AdminCategoriesController : ControllerBase
 
         _logger.LogInformation("Yeni kategori oluşturuldu: {CategoryName} (Id: {CategoryId})", category.Name, category.Id);
 
-        return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
+        var result = new
+        {
+            category.Id,
+            category.Name,
+            category.ImageUrl,
+            category.DisplayOrder,
+            category.IsActive
+        };
+
+        return CreatedAtAction(nameof(GetById), new { id = category.Id }, result);
     }
 
     /// <summary>
@@ -124,7 +133,16 @@ public class AdminCategoriesController : ControllerBase
 
         _logger.LogInformation("Kategori güncellendi: {CategoryName} (Id: {CategoryId})", category.Name, category.Id);
 
-        return Ok(category);
+        var result = new
+        {
+            category.Id,
+            category.Name,
+            category.ImageUrl,
+            category.DisplayOrder,
+            category.IsActive
+        };
+
+        return Ok(result);
     }
 
     /// <summary>

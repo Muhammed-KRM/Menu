@@ -23,19 +23,19 @@ export class MenuService {
     if (!query) return all;
 
     return all
-      .map(cat => ({
+      .map((cat: Category) => ({
         ...cat,
-        products: cat.products.filter(p =>
+        products: (cat.products || []).filter((p: Product) =>
           p.name.toLowerCase().includes(query) ||
           p.description.toLowerCase().includes(query)
         )
       }))
-      .filter(cat => cat.products.length > 0);
+      .filter((cat: Category) => cat.products && cat.products.length > 0);
   });
 
   // Toplam ürün sayısı (Computed)
   totalProductsCount = computed(() => {
-    return this.categories().reduce((sum, cat) => sum + cat.products.length, 0);
+    return this.categories().reduce((sum: number, cat: Category) => sum + (cat.products ? cat.products.length : 0), 0);
   });
 
   loadMenu(): void {
@@ -43,14 +43,14 @@ export class MenuService {
     this.errorMessage.set(null);
 
     this.http.get<MenuResponse>(this.apiUrl).subscribe({
-      next: (res) => {
+      next: (res: MenuResponse) => {
         this.categories.set(res.categories || []);
         if (res.categories && res.categories.length > 0 && !this.activeCategoryId()) {
           this.activeCategoryId.set(res.categories[0].id);
         }
         this.isLoading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Menü yüklenirken hata oluştu:', err);
         this.errorMessage.set('Menü yüklenemedi. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
         this.isLoading.set(false);
