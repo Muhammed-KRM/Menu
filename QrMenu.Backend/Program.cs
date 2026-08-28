@@ -71,12 +71,13 @@ app.UseAuthorization();
 app.MapControllers();
 
 // =============================================================================
-// Veritabanı otomatik oluşturma (Development ortamında)
+// Veritabanı otomatik oluşturma ve Seed verileri (Development ortamında)
 // =============================================================================
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.EnsureCreatedAsync();
+    await DbInitializer.SeedAsync(dbContext);
 }
 
 app.Run();
