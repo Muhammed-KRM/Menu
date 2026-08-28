@@ -54,3 +54,21 @@
 .animate-scale-up {
   animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Kategori Menüsü Yatay Kaydırma Çubuğu */
+.category-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(198, 93, 58, 0.5) transparent;
+}
+.category-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+.category-scrollbar::-webkit-scrollbar-track {
+  background: rgba(58, 36, 24, 0.06);
+  border-radius: 9999px;
+  margin: 0 16px;
+}
+.category-scrollbar::-webkit-scrollbar-thumb {
+  background: #C65D3A;
+  border-radius: 9999px;
+}

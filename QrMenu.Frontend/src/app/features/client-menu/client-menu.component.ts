@@ -66,15 +66,18 @@ import { ImageUrlPipe } from '../../shared/pipes/image-url.pipe';
             <section [id]="'category-' + category.id" class="mb-12 scroll-mt-24">
               
               <!-- Kategori Başlığı -->
-              <div class="flex items-center gap-3 mb-6 pb-3 border-b border-[#E3D7C1]">
-                @if (category.imageUrl) {
-                  <img [src]="category.imageUrl | imageUrl" alt="" class="w-8 h-8 rounded-full object-cover shadow-sm border border-white" />
-                }
-                <h2 class="text-2xl sm:text-3xl font-extrabold text-[#3A2418] tracking-tight">
-                  {{ category.name }}
-                </h2>
-                <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-[#3A2418]/10 text-[#3A2418]">
-                  {{ category.products.length }} çeşit
+              <div class="flex items-center justify-between gap-3 mb-6 pb-3 border-b border-[#E3D7C1]">
+                <div class="flex items-center gap-3 min-w-0">
+                  @if (category.imageUrl) {
+                    <img [src]="category.imageUrl | imageUrl" alt="" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-sm border border-white shrink-0" />
+                  }
+                  <h2 class="text-2xl sm:text-3xl font-extrabold text-[#3A2418] tracking-tight">
+                    {{ category.name }}
+                  </h2>
+                </div>
+                <span class="inline-flex items-center gap-1 text-xs font-extrabold px-3 py-1 rounded-full bg-[#3A2418]/10 text-[#3A2418] whitespace-nowrap shrink-0">
+                  <span>{{ category.products ? category.products.length : 0 }}</span>
+                  <span>çeşit</span>
                 </span>
               </div>
 

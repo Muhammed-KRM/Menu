@@ -8,8 +8,11 @@ import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
   standalone: true,
   imports: [CommonModule, ImageUrlPipe],
   template: `
-    <nav class="sticky top-0 z-30 bg-[#F7F1E3]/95 backdrop-blur-md border-b border-[#E3D7C1] py-3 px-4 shadow-sm transition-all">
-      <div class="max-w-6xl mx-auto flex items-center gap-2.5 overflow-x-auto no-scrollbar scroll-smooth">
+    <nav class="sticky top-0 z-30 bg-[#F7F1E3]/95 backdrop-blur-md border-b border-[#E3D7C1] py-2.5 shadow-sm transition-all relative">
+      <!-- Sağ Kenar Taşma / Devamı Var Gölge İndikatörü -->
+      <div class="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#F7F1E3] to-transparent z-10"></div>
+
+      <div class="max-w-6xl mx-auto px-4 flex items-center justify-start gap-2.5 overflow-x-auto category-scrollbar scroll-smooth pb-1.5">
         @for (cat of menuService.filteredCategories(); track cat.id) {
           <button 
             (click)="scrollToCategory(cat.id)"
@@ -20,18 +23,18 @@ import { ImageUrlPipe } from '../../../../shared/pipes/image-url.pipe';
             [class.bg-white]="menuService.activeCategoryId() !== cat.id"
             [class.text-[#3A2418]]="menuService.activeCategoryId() !== cat.id"
             [class.border-[#E3D7C1]]="menuService.activeCategoryId() !== cat.id"
-            class="flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-xs sm:text-sm whitespace-nowrap border transition-all duration-200 hover:border-[#3A2418] active:scale-95 cursor-pointer">
+            class="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold text-xs sm:text-sm whitespace-nowrap border transition-all duration-200 hover:border-[#3A2418] active:scale-95 cursor-pointer shrink-0">
             
             @if (cat.imageUrl) {
-              <img [src]="cat.imageUrl | imageUrl" alt="" class="w-5 h-5 rounded-full object-cover border border-white/20" />
+              <img [src]="cat.imageUrl | imageUrl" alt="" class="w-5 h-5 rounded-full object-cover border border-white/20 shrink-0" />
             }
-            <span>{{ cat.name }}</span>
+            <span class="whitespace-nowrap">{{ cat.name }}</span>
             <span 
               [class.bg-[#C65D3A]]="menuService.activeCategoryId() === cat.id"
               [class.text-white]="menuService.activeCategoryId() === cat.id"
-              [class.bg-[#C65D3A]/10]="menuService.activeCategoryId() !== cat.id"
+              [class.bg-[#C65D3A]/15]="menuService.activeCategoryId() !== cat.id"
               [class.text-[#C65D3A]]="menuService.activeCategoryId() !== cat.id"
-              class="text-[11px] font-bold px-1.5 py-0.5 rounded-full">
+              class="min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-full text-[11px] font-extrabold leading-none shrink-0">
               {{ cat.products ? cat.products.length : 0 }}
             </span>
           </button>
